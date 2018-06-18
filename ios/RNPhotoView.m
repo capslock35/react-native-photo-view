@@ -295,38 +295,13 @@
         }
         _source = source;
         NSURL *imageURL = [NSURL URLWithString:uri];
-        
-        if (![[uri substringToIndex:4] isEqualToString:@"http"]) {
-            @try {
-                UIImage *image = RCTImageFromLocalAssetURL(imageURL);
-                if (image) { // if local image
-                    [self setImage:image];
-                    if (_onPhotoViewerLoad) {
-                        _onPhotoViewerLoad(nil);
-                    }
-                    if (_onPhotoViewerLoadEnd) {
-                        _onPhotoViewerLoadEnd(nil);
-                    }
-                    return;
-                }
-            }
-            @catch (NSException *exception) {
-                NSLog(@"%@", exception.reason);
-            }
+        UIImage *image = RCTImageFromLocalAssetURL(imageURL);
+        if (image) { // if local image
+            [self setImage:image];
+            return;
         }
 
         NSURLRequest *request = [[NSURLRequest alloc] initWithURL:imageURL];
-        
-        if (source[@"headers"]) {
-            NSMutableURLRequest *mutableRequest = [request mutableCopy];
-            
-            NSDictionary *headers = source[@"headers"];
-            NSEnumerator *enumerator = [headers keyEnumerator];
-            id key;
-            while((key = [enumerator nextObject]))
-                [mutableRequest addValue:[headers objectForKey:key] forHTTPHeaderField:key];
-            request = [mutableRequest copy];
-        }
 
         __weak RNPhotoView *weakSelf = self;
         if (_onPhotoViewerLoadStart) {
@@ -350,15 +325,11 @@
                             partialLoadBlock:nil
                              completionBlock:^(NSError *error, UIImage *image) {
                                                 if (image) {
-                                                    dispatch_async(dispatch_get_main_queue(), ^{
+                                                    dispatch_sync(dispatch_get_main_queue(), ^{
                                                         [weakSelf setImage:image];
                                                     });
                                                     if (_onPhotoViewerLoad) {
                                                         _onPhotoViewerLoad(nil);
-                                                    }
-                                                } else {
-                                                    if (_onPhotoViewerError) {
-                                                        _onPhotoViewerError(nil);
                                                     }
                                                 }
                                                 if (_onPhotoViewerLoadEnd) {
@@ -410,7 +381,7 @@
 
 - (void)initView {
     _minZoomScale = 1.0;
-    _maxZoomScale = 5.0;
+    _maxZoomScale = 3.0;
 
     // Setup
     self.backgroundColor = [UIColor clearColor];
